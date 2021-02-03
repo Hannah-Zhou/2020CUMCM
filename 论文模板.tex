@@ -1,0 +1,1731 @@
+\documentclass[12pt]{ctexart}
+\usepackage{abstract}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{array}
+\usepackage{appendix}
+\usepackage{caption}
+\usepackage{listings}%代码
+\usepackage{xcolor}%该死的代码高亮！！
+\usepackage{fancyhdr}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+\usepackage{setspace}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{ctex}
+\usepackage{paralist}
+\let\itemize\compactitem
+\let\enditemize\endcompactitem
+\let\enumerate\compactenum
+\let\endenumerate\endcompactenum
+\let\description\compactdesc
+\let\enddescription\endcompactdesc
+\usepackage{geometry}
+\geometry{left=26mm,right=26mm,top=30.mm,bottom=30mm}
+\begin{document}
+ \lstset{numbers=left, numberstyle=\tiny,breaklines=true,
+	keywordstyle=\color{blue!70},
+	commentstyle=\color{red!50!green!50!blue!50}, frame=shadowbox,
+	rulesepcolor=\color{red!20!green!20!blue!20} }
+\pagestyle{plain}
+\begin{center}
+\LARGE{\textbf{炉温曲线优化设计}}
+\end{center}
+
+\begin{center}
+\large{\textbf{摘要}}
+\end{center}
+
+本文针对不同炉温条件,传送带速度及优化目标下的炉温曲线优化问题进行了探讨.
+
+\texbf{对于问题一},解决问题的具体思路如下:首先,研究整个回焊炉内水平方向温度的变化趋势,得到空气温度变化模型;其次,对电路板建立热传导模型;再次,以实际炉温曲线数据为参照,采用有限差分法和最小二乘法,并结合稳定性条件对电路板热传导模型的未知参数进行确定,并对空气温度变化模型进行修正;最后,求解电路板热传导模型,求得相应的炉温曲线和特定点温度值.计算所得结果如下所示:
+\begin{longtable}
+\centering
+\caption*{}
+\small{\begin{tabular}{c|c|c|c|c}
+\hline
+区域特定点&温区3中点&温区6中点&温区7中点&温区8结束处\\
+\hline
+温度(°C)&132.97&170.50&188.55&221.46\\
+\hline
+    \end{tabular}}
+    \end{longtable}\\
+\texbf{对于问题二},解决问题的具体思路如下:首先,更新水平方向温度变化函数;其次,将制程界限转化为约束条件,建立最大速度求解模型;最后,采用自创的分步遍历算法,结合问题一中所得电路板热传导模型,对传送带最大速度进行求解,最终求得最大速度为:73.43cm/min.
+
+\texbf{对于问题三},解决问题的具体思路如下:首先,采用梯形分割求和法求得炉温曲线特定面积与未知决策参量的关系;其次,以该面积最小为优化目标,制程界限为约束条件建立单目标非线性优化模型,采用多起点全局搜索算法对各温区的设定温度和传送带的过炉速度进行求解;最后,利用求得的决策参量计算出所求面积.计算所得结果如下所示:
+\begin{longtable}
+\centering
+\caption*{}
+\small{\begin{tabular}{c|c|c|c|c|c}
+\hline
+炉温曲线特定面积&温区1$\sim$5温度&温区6温度&温区7温度&温区8$\sim$9温度&传送带速度\\
+\hline
+479.97$s\cdot°C$&181.59°C&193.15°C&226.68°C&264.32°C&85.99cm/min\\
+\hline
+    \end{tabular}}
+    \end{longtable}\\
+
+\texbf{对于问题四},解决问题的具体思路如下:首先,考虑将炉温曲线的峰值温度右半部分曲线向左对称化;其次,求解原炉温曲线与对称曲线的温度差平方和,将对称问题转化为求解温度差平方和最小值的问题;最后,以指定覆盖面积最小,温度差平方和最小为目标函数,制程界限为约束条件,建立双目标非线性规划模型.对该模型进行求解,得到最优炉温曲线,各温区设定温度和传送带过炉速度.计算所得结果如下所示:
+\begin{longtable}
+\centering
+\caption*{}
+\small{\begin{tabular}{c|c|c|c|c|c}
+\hline
+炉温曲线特定面积&温区1$\sim$5温度&温区6温度&温区7温度&温区8$\sim$9温度&传送带速度\\
+\hline
+485.40$s\cdot°C$&181.70°C&196.72°C&226.69°C&263.68°C&85.84cm/min\\
+\hline
+    \end{tabular}}
+    \end{longtable}\\
+\textbf{关键词:}\keywords{热传导方程$\ $ 有限差分法 $\ $多起点全局搜索算法 $\ $ 分步遍历算法}    
+
+
+
+\newpage
+\pagestyle{plain}
+\setcounter{page}{1}
+\section{问题重述}
+回流焊工艺是指将印刷电路板放入回焊炉中,通过加热将电子元件焊接到电路板上,在这个生产工艺流程中,回焊炉温度的设置是至关重要的.回焊炉内部由11个长度为30.5cm的小温区及炉前区域和炉后区域组成,每个小温区之间有5cm的间隙.现令电路板匀速进入炉内进行加热焊接,并通过温度传感器测试其焊接区域中心的温度.炉温曲线制程界限和传送带速度限制已知,建立数学模型,回答以下问题:
+
+\textbf{问题一:}各温区温度的设定值分别为173ºC(小温区1$\sim$5),198ºC(小温区6),230ºC(小温区7)和257ºC(小温区8$\sim$9),研究焊接区域中心的温度变化情况,对焊接区域的温度变化规律建立数学模型,得到相应的炉温曲线,并列出小温区3,6,7中点处以及小温区8结束处焊接区域中心的温度.同时计算每隔0.5s焊接区域中心的温度.
+
+\textbf{问题二:}各温区温度的设定值分别为182ºC(小温区1$\sim$5),203ºC(小温区6),237ºC(小温区7),254ºC(小温区8$\sim$9),确定允许的最大传送带过炉速度.
+
+\textbf{问题三:}要求在焊接过程中,焊接区域中心的峰值温度不能过高,且超过217ºC的时间不可过长.基于此要求,给出求解最优炉温曲线,使得升温阶段超过217ºC到峰值温度所覆盖的面积尽可能地小,求得各温区的设定温度和传送带的过炉速度,并给出相应的面积.
+
+\textbf{问题四:}除却上述条件,要求以峰值温度为中心线的两侧超过217ºC的炉温曲线应尽量对称.请结合问题3,进一步给出最优炉温曲线,以及各温区设定的温度及传送带过炉速度,并给出相应的指标值.
+
+其中,要求炉温曲线满足制程界限;附件中给出了某次实验中炉温曲线的各项数值.
+\section{模型假设}
+\begin{enumerate}
+\item 生产车间的温度保持在25ºC.
+\item 假设回焊炉无热量损耗.
+\item 假设炉内空气温度会在短时间内达到稳定.
+\item 假设焊接过程中传送带不震动,即电路板平稳匀速运行.
+\item 假设回焊炉内空气在垂直于传送带方向上无温度差异.
+\item 假设炉内空气温度不受电路板热辐射的影响.
+\item 假设电路板材质单一,传热均匀.
+\end{enumerate}
+\newpage
+\section{变量说明}
+\begin{longtable}
+\centering
+\setlength{\abovecaptionskip}{0pt}
+     \caption{重要符号说明}
+    \label{tab:表1}\\
+   \begin{tabular}{m{2cm}<{\centering}m{10cm}<{\centering}m{3cm}<{\centering}}
+    \toprule
+    \textbf{符号}&\textbf{符号说明}&\textbf{单位}\\
+    \midrule
+    $T_i$&各个区域的设定温度&K\\
+    $k$&热导率&W/($m\cdot K$)\\
+    $l$&电路板厚度&m\\
+    $k_1$&热交换系数&W/($m^2\cdot°C$)\\
+    $v$&传送带运行速度&m/s\\
+    $S$&回焊炉研究点到炉前区域前端的距离&m\\
+    $x$&电路板研究点到其上表面的距离&m\\
+        \bottomrule
+    \end{tabular}\\
+\end{longtable}
+注:未列出符号及重复符号以出现处为准.
+\section{模型的建立与求解}
+\subsection{问题一模型的建立与求解}
+\subsubsection{问题一的分析}
+问题一要求对焊接区域中心温度的变化规律建立数学模型,考虑对回流焊系统建立热传导方程,解决问题的具体思路如下:
+
+首先,研究整个回焊炉内水平方向温度的变化趋势:\\
+1.由于各个小温区对回焊炉内空气持续加热,且炉内温度会在短时间内达到稳定，忽略回焊炉内空气纵向的温度差异,设回焊炉各温区内空气温度稳定后的温度值等于各温区设定的加热温度值.\\
+2.由于炉前区域、炉后区域以及小温区之间的间隙不做特殊的温度控制,其温度与相邻温区的温度有关,考虑对温度改变的两个温区之间的间隙找到一个温度相关指标,构建温度过渡区域,对温度的变化关系进行求解.
+
+其次,对电路板建立热传导方程，确定其定解条件,并将求得空气温度代入边界条件.
+
+接着,以实际炉温曲线数据为参照,采用有限差分法和最小二乘法对电路板热传导方程中的未知参数进行反解.
+
+最后,根据问题一条件对电路板热传导模型进行求解,求得相应的炉温曲线,得到焊接区域中心的温度变化情况和特定点温度值.
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=17cm]{国赛/流程图1.png}
+    \caption{问题一思路流程图}
+    \label{tab:图1}
+\end{figure}
+\subsubsection{空气温度变化模型的建立}
+\paragraph{4.1.2.1$\ $距离-温度坐标系的建立}$\ $
+
+为了方便讨论,以整个回焊炉的结构为基础以炉前区域末端与第一个温区的交界处为原点,研究对象到原点的距离$S$为横轴,回焊炉温度$U_1$为纵轴建立平面坐标系如图4.2所示.
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=15cm]{国赛/坐标轴1.png}    \caption{距离-温度坐标系示意图}
+    \label{tab:图1}
+\end{figure}
+\paragraph{4.1.2.2$\ $空气温度变化模型的建立}$\ $
+\subparagraph{竖直方向温度变化趋势}
+研究回焊炉的结构可知,运输电路板的传送带宽度有限,上下温区之间的空气层很薄,因此不妨假设在竖直方向上空气温度差忽略不计.
+
+\subparagraph{水平方向温度变化趋势}
+根据题意可得,回焊炉启动后,炉内空气温度会在短时间内达到稳定,且考虑到加热空气层很薄,空气对流时导热很快的特点,取各温区除边界部分外的空气温度值为温区设定的加热温度值.
+
+又因为炉前区域,炉后区域以及小温区之间的间隙不做特殊的温度控制,其温度与相邻温区的温度有关,各温区边界附近的温度也可能受到相邻温区温度的影响.因此,取每个温区的左边界向右0.02m,右边界向左0.02m,以及炉前区域左边界向右0.02m和炉后区域右边界向左0.02m,建立温度变化的缓冲区域,使温度在该区域之间进行过渡.
+
+已知温度在一段时间内达到稳定,则在过渡区域内不会积累热量(即热量完全传递).又根据傅里叶定律$q=-k\frac{\partial u}{\partial x}$,单位时间内流经单位面积的热量$q$与温度梯度成正比,因此过渡区域内温度增长的梯度不变.基于此分析,根据过渡区域两端的温度差和中间过渡区的长度,可以确定该过渡区域内温度变化的线性函数表达式,最终得到整个回焊炉内水平方向温度的变化趋势.
+\begin{figure}[!htp]
+\centering
+\subfigure[温区-间隙过渡区域示意图]{
+\includegraphics[height=6cm]{国赛/区域1.png}\label{2} 
+}
+\quad
+\subfigure[炉前区域-温区过渡区域示意图]{
+\includegraphics[height=6cm]{国赛/区域2.png}\label{2} 
+}
+\caption{回焊炉内温度过渡区域示意图}
+\end{figure}
+
+已知室温$T_0=25°C=298K$,各温区设定温度分别为$T_1$(小温区1$\sim$5),$T_2$(小温区6),$T_3$(小温区7),$T_4$(小温区8$\sim$9),小温区10$\sim$11的设定温度为室温$T_0$.空气温度变化模型$U_1(S)$如下:
+\footnote{本文中出现的公式全部使用国际单位制,题目中所给条件均进行单位转换,用国际单位制表示.}
+\begin{equation}
+U_1(S)=\left\{
+\begin{array}{cc}
+T_0,\quad\quad0\leq S<0.23\ or\ S>3.465\\
+\frac{T_1-T_0}{0.04}(S-0.23)+T_0,\quad\quad 0.23\leq S<0.27\\
+T_1,\quad\quad0\leq 0.27\leq S<1.955\\
+\frac{T_2-T_1}{0.09}(S-1.955)+T_1,\quad\quad1.955\leq S<2.045\\
+T_2,\quad\quad 0\leq 2.045\leq S<2.31\\
+\frac{T_3-T_2}{0.09}(S-2.31)+T_2,\quad\quad 2.31\leq S<2.40\\
+T_3,\quad\quad0\leq 2.40\leq S<2.665\\
+\frac{T_4-T_3}{0.09}(S-2.665)+T_3,\quad\quad2.665\leq S<2.755\\
+T_4,\quad\quad0\leq 2.755\leq S<3.375\\
+\frac{T_0-T_4}{0.09}(S-3.375)+T_4,\quad\quad3.375\leq S\leq3.465\\
+\end{array}\right. 
+\end{equation}
+
+附件中所给炉温曲线的测定环境为:$T_1=175°C=448K$,$T_2=195°C=468K$,$T_3=235°C=508K$,$T_4=255°C=528K$.此时空气温度变化趋势如图4.4所示.
+\begin{figure}[!htp]
+\centering
+\subfigure[空气温度线性规律示意图]{
+\includegraphics[width=14cm]{国赛/温度曲线.png}\label{2} 
+}
+\quad
+\subfigure[空气温度分布示意图]{
+\includegraphics[width=16cm]{国赛/温度分布图.png}\label{2} 
+}
+\caption{回焊炉内空气温度变化趋势示意图}
+\end{figure}
+
+\subsubsection{电路板热传导模型的建立}
+
+\paragraph{4.1.3.1$\ $电路板厚度-温度坐标系的建立}$\ $
+
+由于回焊炉中加热接触面为电路板的水平截面,因此将电路板水平方向温度差忽略不计,可以将电路板的热传导方程简化为厚度方向的一维方程.
+
+以电路板上端表面处为原点,其距离上表面的厚度$x$为自变量,电路板在该厚度处的温度$U_2$为因变量建立平面坐标系,电路板受热原理及坐标系示意图如图4.5所示.
+\begin{figure}[!htp]
+\centering
+\subfigure[电路板加热示意图]{
+\includegraphics[width=8cm]{国赛/加热.png}\label{2} 
+}
+\quad
+\subfigure[电路板厚度-温度坐标系示意图]{
+\includegraphics[width=6cm]{国赛/坐标轴2.png}\label{2} 
+}
+\caption{坐标轴建立原理示意图}
+\end{figure}
+
+\paragraph{4.1.3.2$\ $电路板一维热传导方程的推导}$\ $
+
+由上文可得回焊炉内水平方向温度随与炉前区域的距离的变化函数为$U_1(S)$.已知当前传送带过炉速度$v$恒定.由恒速距离公式$S=vt$可知,当电路板在回焊炉中运动了$ts$时,电路板周围的空气温度为$U_1(vt)$.设$U_2(x,t)$为第$ts$时厚度为$x$处的温度.
+
+根据傅里叶定律可得,单位时间内流经单位面积的热量$q$与温度梯度成正比,即:
+\begin{equation}
+q=-k\frac{\partial U_2}{\partial x}
+\end{equation}\\
+其中,$k$是热导率,公式中的负号表示热流方向与梯度方向相反.
+
+对$x$位置取一段微元$\Delta x$,设电路板垂直于$x$方向的横截面积为$D$,根据傅里叶定律可得\cite{2}:\\
+$\Delta t$内从$\Delta x$前端流入的热量$q_1$的表达式为:
+\begin{equation}
+q_1=-kD\Delta t\left.\frac{\partial U_2}{\partial x}\right|_{x}
+\end{equation}\\
+$\Delta t$内从$\Delta x$后端流出的热量$q_2$的表达式为:
+\begin{equation}
+q_2=-kD\Delta t\left.\frac{\partial U_2}{\partial x}\right|_{x+\Delta x}
+\end{equation}
+
+物体受热后,其内部原子会发生振动产生电磁波,与外界进行能量传递.因此电路板在回流焊过程中会从表面放出辐射能.但考虑到回焊炉内空气层较薄,吸收辐射热量较少,因此忽略空气的吸收作用.同时,查阅文献得知\cite{4},非稳态传热模型中辐射的传热作用很小,因此考虑在本模型中忽略辐射的传热作用.在下文模型改进部分对考虑辐射传热作用的模型进行讨论.
+
+综上,可得电路板吸收的总热量$q_3$为:
+\begin{equation}
+q_3=q_1-q_2
+\end{equation}
+根据比热容的定义又可得:
+\begin{equation}
+q_3=cm\Delta t=c\rho D\Delta x\Delta U_2
+\end{equation}
+结合(3)(4)(5)(6)式,可得
+\begin{equation}
+kD\Delta t(\left.\frac{\partial U_2}{\partial x}\right|_{x+\Delta x}-\left.\frac{\partial U_2}{\partial x}\right|_{x})=c\rho D\Delta x\Delta U_2
+\end{equation}
+又因为$\left.\frac{\partial U_2}{\partial x}\right|_{x+\Delta x}-\left.\frac{\partial U_2}{\partial x}\right|_{x}
+$为$\frac{\partial U_2}{\partial x}$的变化量,故:
+\begin{equation}
+(\left.\frac{\partial U_2}{\partial x}\right|_{x+\Delta x}-\left.\frac{\partial U_2}{\partial x}\right|_{x})=\frac{\Delta(\frac{\partial U_2}{\partial x})}{\Delta x}\Delta x\approx\frac{\partial^2 U_2}{\partial x^2}\Delta x
+\end{equation}
+再利用变化量与微分的近似关系可得:
+\begin{equation}
+\frac{\Delta U_2}{\Delta t}\approx \frac{\partial U_2}{\partial t}
+\end{equation}
+综上,可得电路板一维热传导方程:
+\begin{equation}
+\frac{\partial U_2}{\partial t}=a^2\frac{\partial^2 U_2}{\partial x^2}
+\end{equation}
+其中,$a=\sqrt{\frac{k}{c\rho}}$为系统的物理参量,它在系统中的角色为一个热扩散系数.
+\paragraph{4.1.3.3$\ $定解条件的确定}$\ $
+\subparagraph{初值条件}
+由题目可知,生产车间的温度保持在298K(25ºC),则初值条件为\cite{3}:
+\begin{equation}
+  t_0=0,\quad  U_2(x,t_0)=298K
+\end{equation}
+\subparagraph{边界条件}
+根据牛顿定律,从物体流入介质中的热量和两者之间的温度差成正比,则有:
+\begin{equation}
+dQ=k_1(U_2-U_1)dDdt
+\end{equation}
+其中,比例常数$k_1$为热交换系数.考察流过电路板表面的热量,结合物体与接触面的热传导规律和牛顿定律,可得关系式:
+\begin{equation}
+-k\frac{\partial U_2}{\partial x}dDdt=k_1(U_2-U_1)dDdt
+\end{equation}
+即:
+\begin{equation}
+\frac{\partial U_2}{\partial x}+\frac{k_1}{k}U_2=\frac{k_1}{k}U_1
+\end{equation}
+
+综上,边界条件为:
+\begin{equation}
+\left\{
+\begin{array}{cc}
+   \left.\frac{\partial U_2}{\partial x}\right|_{x=0}+\frac{k_1}{k}U_2(0,t)=\frac{k_1}{k}U_1(vt)\\ 
+  -\left.\frac{\partial U_2}{\partial x}\right|_{x=l}+\frac{k_1}{k}U_2(l,t)=\frac{k_1}{k}U_1(vt)
+\end{array}\right.
+\end{equation}
+
+\paragraph{4.1.3.4$\ $电路板热传导模型的建立}$\ $
+
+将4.1.3.2中所得的电路板一维热传导方程(10)与定解条件(11)(15)结合起来,就得到了一个电路板热传导定解问题,该模型如下:
+
+\begin{equation}
+\left\{
+\begin{array}{cc}
+  \frac{\partial U_2}{\partial t}=a^2\frac{\partial^2 U_2}{\partial x^2}\\
+  t_0=0,\ U_2(x,t_0)=298\\
+  \left.\frac{\partial U_2}{\partial x}\right|_{x=0}+\frac{k_1}{k}U_2(0,t)=\frac{k_1}{k}U_1(vt)\\
+  -\left.\frac{\partial U_2}{\partial x}\right|_{x=l}+\frac{k_1}{k}U_2(l,t)=\frac{k_1}{k}U_1(vt)
+\end{array}\right. 
+\end{equation}
+\subsubsection{电路板热传导模型参数的求解}
+在电路板热传导模型中,含有两个未知参数$a$和$\frac{k_1}{k}$,考虑使用有限差分法和最小二乘法进行求解.
+\paragraph{4.1.4.1$\ $有限差分法离散化热传导方程}$\ $
+
+有限差分方法为一种数值解法,它的基本思想是先把问题的定义域进行网格剖分,然后在网格点上,按适当的数值微分公式把定解问题中的微商换成差商,从而把原问题离散化为差分格式,进而求出数值解.
+
+本文采用古典显格式差分方法求解微分方程.将$U_2(x,t)$分别以步长$\Delta x$与$\Delta t$进行离散化,并在矩阵$U(i,j)$中存储第$i$个时间节点与第$j$个空间节点对应的温度值.其中,$\ i=1,2,\dots,\frac{l}{\Delta x}+1$;$j=1,2,\dots,N$,$\ N$为时间节点总个数.
+为第$i$时间层的节点由第$i-1$时间层的节点直接显式表达出来.离散化的热传导方程如下:
+\begin{equation}
+\left\{
+\begin{array}{cc}
+  \frac{U(i,j)-U(i-1,j)}{\Delta t}=a^2\frac{U(i-1,j-1)-2U(i-1,j)+U(i-1,j)}{\Delta x^2}\\
+  U(1,j)=298\\
+  \frac{U(i,1)-U(i,2)}{\Delta x}+\frac{k_1}{k}U(i,1)=\frac{k_1}{k}U_1((i-1)v\Delta t)\\
+  \frac{U(i,N)-U(i,N-1)}{\Delta x}+{k_1}{k}U(i,N)=\frac{k_1}{k}U_1((i-1)v\Delta t)
+\end{array}\right. 
+\end{equation}
+
+
+对非稳态传热过程进行离散求解,时间节点$i$,空间节点$j$上的温度易受到邻侧点的影响,采用古典显格式差分法时,需要考虑其求解的稳定性条件,当网格比不合理时,易产生不收敛现象.傅里叶网格数$F_\Delta$表达式如下:
+\begin{equation}
+F_\Delta=a^2\frac{\Delta t}{(\Delta x)^2}
+\end{equation}
+内节点限制条件为:
+\begin{equation}
+F_\Delta\leq \frac{1}{2}
+\end{equation}
+边界限制条件为:
+\begin{equation}
+F_\Delta\leq \frac{1}{2(1+\frac{k_1\Delta x}{k})}
+\end{equation}
+
+结合稳定性条件,最终确定步长$\Delta x=5\times10^{-6}m$,$\Delta t=0.02s$.
+\paragraph{4.1.4.2$\ $最小二乘法确定参数}$\ $
+
+将未知参数$a$和$\frac{k_1}{k}$组成二元组$(a,\frac{k_1}{k})$.考虑逐一遍历每一个二元组,并求得该组参数对应的炉温曲线与附件中的实际炉温曲线的残差平方和,将满足制程界限且残差平方和最小的二元组作为最终所确定的参数.具体步骤如下:\
+
+\textbf{Step1:}令初始二元组$(a,\frac{k_1}{k})$为(0,0),初始最小残差平方和$r^2_{min}$为足够大的常数.
+
+\textbf{Step2:}使用试探法大致确立能使热传导方程收敛的二元组大致范围.
+
+\textbf{Step3:}以一定的步长在限制范围内遍历$a$和$\frac{k_1}{k}$的值将每组参数取值的对应温度曲线与实际温度曲线进行比较.
+
+\textbf{Step4:}当该组参数得到的曲线不满足制程界限时,则舍去,继续遍历;反之,记录当前二曲线的残差平方和$r^2$,若$r^2<r^2_{min}$,则更新$(a,\frac{k_1}{k})$和$r^2_{min}$,继续遍历.
+
+\textbf{Step5:}所有遍历结束后,最终所得的$(a,\frac{k_1}{k})$即为所求参数的最小二乘解,$r^2_{min}$为该组参数下的炉温曲线和实际曲线的残差平方和.
+
+
+\paragraph{4.1.4.3$\ $参数结果评价}$\ $
+
+使用MATLAB求解得到参数$a=1.6\times10^{-5}$,$\ \frac{k_1}{k}=7200$,代入上述电路板热传导模型,绘得炉温曲线对比图如图4.6所示.
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=13cm]{国赛/修正前.png}
+    \caption{拟合炉温曲线对比示意图}
+    \label{tab:图1}
+\end{figure}
+
+观察对比图可知,进入冷却区域前的阶段拟合效果较好,与实际结果相符,但是进入冷却区域后拟合效果与实际情况有所偏差,此时整体残差平方和为$7.37071\times10^5$,效果不甚理想,因此考虑对模型进行修正.
+\subsubsection{电路板热传导模型的修正}
+\paragraph{4.1.5.1$\ $冷却区温度过渡区域的修正}$\ $
+
+猜想进入冷却区域后与实际结果相差较大的原因是,在实际情况中温度较高的物体进入无温度控制的低温区域时,该区域内空气温度重新达到稳定的时间会较长,因此考虑增加回流区和冷却区之间的空气温度过渡区域长度,对空气温度变化模型进行修正.将回流区至冷却区的温度区域延长至整个冷却区域,修正示意图如图4.7所示.
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=11cm]{国赛/区域3.png}
+    \caption{拟合炉温曲线对比示意图}
+    \label{tab:图1}
+\end{figure}
+
+修正后空气温度变化曲线示意图如图4.8所示.
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=14cm]{国赛/改进温度曲线.png}
+    \caption{修正后空气温度变化曲线示意图}
+    \label{tab:图1}
+\end{figure}
+
+\paragraph{4.1.5.2$\ $修正后参数结果评价与分析}$\ $
+
+修正空气温度过渡区域长度后,使用MATLAB求解得到参数$a=1.6\times10^{-5}$,$\ \frac{k_1}{k}=7000$,绘得修正后炉温曲线对比图如图4.9所示.
+
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=13cm]{国赛/拟合结果.png}
+    \caption{修正后拟合炉温曲线对比示意图}
+    \label{tab:图1}
+\end{figure}
+
+观察修正后的炉温曲线对比图可知,电路板炉温曲线整体拟合效果较好,残差平方和为$3.3327\times10^4$,明显小于修正前模型,证明修正效果较好.
+\paragraph{4.1.5.3$\ $模型参数的灵敏度分析}$\ $
+
+为了验证温度分布的可靠性,对温度过渡区域的距离进行灵敏性分析.调整温度过渡区域距离的的取值,以0.001m为步长,对正常温度过渡区域长度0.02m向前向后取值;以0.01m为步长,对冷却温度过渡区域长度0.66m向前向后取值.得到的不同情况下的误差平方和如图4.10所示.
+
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=13cm]{国赛/灵敏度分析 (1).png}
+    \caption{灵敏度分析示意图}
+    \label{tab:图1}
+\end{figure}
+
+由图可知,随着温度过渡区域距离的变化,所得结果的误差平方和波动相对较小,因此该因素对于结果的影响较小,温度过渡区域距离的设定较为合理,与实际情况相符.
+\newpage
+\subsubsection{电路板热传导模型的求解}
+\paragraph{4.1.6.1$\ $问题一温度变化模型的确定}$\ $
+
+问题一待求炉温曲线的测定环境为:$T_0=25°C=298K$,$T_1=173°C=446K$,$T_2=198°C=471K$,$T_3=230°C=503K$,$T_4=257°C=530K$.结合4.1.5.1，此时空气温度变化函数$U_1(S)$如下:
+
+\begin{equation}
+U_1(S)=\left\{
+\begin{array}{cc}
+298,\quad\quad0\leq S<0.23\ or\ S>4.105\\
+\frac{148}{0.09}(S-0.23)+298,\quad\quad0.23\leq S<0.27\\
+446,\quad\quad0\leq 0.27\leq S<1.955\\
+\frac{25}{0.09}(S-1.955)+446,\quad\quad1.955\leq S<2.045\\
+471,\quad\quad0\leq 2.045\leq S<2.31\\
+\frac{32}{0.09}(S-2.31)+471,\quad\quad 2.31\leq S<2.40\\
+503,\quad\quad0\leq 2.40\leq S<2.665\\
+\frac{27}{0.09}(S-2.665)+503,\quad\quad2.665\leq S<2.755\\
+530,\quad\quad0\leq 2.755\leq S<3.375\\
+\frac{-232}{0.73}(S-3.375)+530,\quad\quad3.375\leq S\leq4.105\\
+\end{array}\right. 
+\end{equation}
+
+\paragraph{4.1.6.2$\ $电路板热传导模型的求解}$\ $
+
+利用MATLAB对电路板热传导模型进行求解,所得小温区3,6,7中点及小温区8结束处焊接区域中心的温度如表4.1所示.
+\begin{longtable}
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\caption{区域特定点温度数据表}
+\label{}\\
+\begin{tabular}{c|c|c|c|c}
+\hline
+区域特定点&温区3中点&温区6中点&温区7中点&温区8结束处\\
+\hline
+温度(°C)&132.97&170.50&188.55&221.46\\
+\hline
+    \end{tabular}
+    \end{longtable}\\
+    
+炉温曲线如图4.11所示.
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=16cm]{国赛/问题一曲线.png}
+    \caption{问题一炉温曲线示意图}
+    \label{tab:图1}
+\end{figure}
+\newpage
+\subsection{问题二模型的建立与求解}
+\subsubsection{问题二的分析}
+问题二需要求得允许的最大传送带过炉速度,解决问题的具体思路如下:
+
+首先,将制程界限和速度值限制转化为约束条件.
+
+其次,结合问题一改进后的空气温度变化模型和问题二所给温度条件,得到新的水平方向温度变化函数.
+
+最后,设计分布遍历算法,结合问题一中所得改进的电路板热传导模型,对传送带最大速度进行求解.
+\subsubsection{最大速度求解模型的建立}
+\paragraph{4.2.2.1$\ $最大速度求解模型约束条件的确定}$\ $
+
+分析已求得的炉温曲线性质可知,炉温曲线在温度最高峰值$U_{2max}$前半部分单调递增(升温阶段),在温度最高峰后半部分单调递减(降温阶段).结合题目所给制程界限,设定几个特殊温度时间点符号如表4.2所示.
+\begin{longtable}
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\caption{特殊时间节点符号表}
+\label{}\\
+\begin{tabular}{|c|c|c|c|}
+\hline
+$t_1$&炉温曲线第一次达到423K的时刻&$t_2$&炉温曲线第一次达到463K的时刻\\
+\hline
+$t_3$&炉温曲线第一次达到454K的时刻&$t_4$&炉温曲线第二次达到454K的时刻\\
+\hline
+    \end{tabular}
+    \end{longtable}\\
+下面将制程界限转化为模型的约束条件:\\
+要求温度上升斜率不大于3K/s,温度下降斜率不小于-3K/s,则有约束条件:
+\begin{equation}
+    \left|\frac{d U_2}{d t}\right|\leq3
+\end{equation}
+
+要求温度上升过程中处于423K$\sim $463K的时间大于60s,小于120s,则有约束条件:
+\begin{equation}
+    60\leq t_2-t_1\leq120
+\end{equation}
+要求温度大于454K的时间大于40s,小于90s,则有约束条件:
+\begin{equation}
+40\leq t_4-t_3\leq90
+\end{equation}
+
+要求炉温曲线中的峰值温度大于513K,小于523K,则有约束条件:
+\begin{equation}
+513\leq U_{2max}\leq523
+\end{equation}
+
+\paragraph{4.2.2.2$\ $问题二空气温度变化模型的确定}$\ $
+
+问题二的测定环境为:$T_0=25°C=298K$,$T_1=182°C=455K$,$T_2=203°C=476K$,$T_3=237°C=510K$,$T_4=254°C=527K$.结合4.1.5.1和4.1.6.1,问题二空气温度变化函数$U_1(S)$为:
+\begin{equation}
+U_1(S)=\left\{
+\begin{array}{cc}
+298,\quad\quad 0\leq S<0.23\ or\ S>4.105\\
+\frac{157}{0.09}(S-0.23)+298,\quad\quad0.23\leq S<0.27\\
+455,\quad\quad 0\leq 0.27\leq S<1.955\\
+\frac{21}{0.09}(S-1.955)+455,\quad\quad1.955\leq S<2.045\\
+476,\quad\quad 0\leq 2.045\leq S<2.31\\
+\frac{34}{0.09}(S-2.31)+476,\quad\quad2.31\leq S<2.40\\
+510,\quad\quad0\leq 2.40\leq S<2.665\\
+\frac{17}{0.09}(S-2.665)+510,\quad\quad2.665\leq S<2.755\\
+527,\quad\quad0\leq 2.755\leq S<3.375\\
+\frac{-229}{0.73}(S-3.375)+527,\quad\quad3.375\leq S\leq4.105\\
+\end{array}\right. 
+\end{equation}
+
+\paragraph{4.2.2.3$\ $模型综合}$\ $
+
+结合所得问题二测量环境下的空气温度变化函数$U_1(S)$,约束条件(22)(23)(24)(25),可得到综合的最大速度求解模型:
+\begin{equation}
+\left\{
+\begin{array}{cc}
+  \frac{\partial U_2}{\partial t}=a^2\frac{\partial^2 U_2}{\partial x^2}\\
+  t_0=0,\quad  U_2(x,t_0)=298\\
+  \left.\frac{\partial U_2}{\partial x}\right|_{x=0}+\frac{k_1}{k}U_2(0,t)=\frac{k_1}{k}U_1(vt)\\
+  -\left.\frac{\partial U_2}{\partial x}\right|_{x=l}+\frac{k_1}{k}U_2(l,t)=\frac{k_1}{k}U_1(vt)\\
+\left|\frac{d U_2}{d t}\right|\leq3\\
+60\leq t_2-t_1\leq120\\
+40\leq t_4-t_3\leq90\\
+513\leq U_{2max}\leq523
+\end{array}\right. \\
+\end{equation}
+
+\subsubsection{最大速度求解模型的求解及分析}
+实际情况中要求传送带的过炉速度$v$调节范围为65$\sim$100cm/min,为了能得到精度较高且能应用于实际的速度,选取速度精度为小数点后两位.\footnote{由于精度问题,此处速度描述采用题中所给单位,实际求解时已化为国际单位制计算.}
+
+本文考虑对速度在整个取值范围中进行遍历,为了避免计算量过大,本文以遍历算法为基础,设计一种分步遍历算法,分两步逐步逼近最大速度的精确值.具体步骤如下:
+
+\textbf{Step1:}进行粗遍历.取速度步长为0.2cm/min,将不同的速度值代入模型进行计算,记录满足约束条件的各个速度值,选取其中的速度最大值.
+
+\textbf{Step2:}进行细遍历.在粗遍历所得速度最大值向前向后1cm/min的范围内,取速度步长为0.01cm/min,得到满足约束条件的各个速度值,选取最终所求的速度最大值.
+
+使用MATLAB进行求解,最终所得传送带最大速度$v$为73.43cm/min.将该速度代入问题二中模型,经检验满足制程界限.
+\newpage
+
+\subsection{问题三模型的建立与求解}
+\subsubsection{问题三的分析}
+问题三需要求得一条满足条件需求的最优炉温曲线，为单目标的非线性规划问题.解决问题的具体思路如下:
+
+首先,采用梯形分割求和法对炉温曲线面积进行计算,得到炉温曲线超过490K(217ºC)到峰值温度所覆盖的面积与未知决策参量的关系.
+
+其次,以该面积最小为优化目标,制程界限为约束条件建立单目标非线性优化模型,对各温区的设定温度和传送带的过炉速度进行求解.
+
+最后,利用所求得的各参数计算出所求面积.
+\subsubsection{炉温曲线优化模型的建立}
+\paragraph{4.3.2.1$\ $约束条件的确定}$\ $
+
+问题三中的未知决策参量为:温区1$\sim$5温度$T_1$,温区6温度$T_2$,温区7温度$T_3$,温区8$\sim$9温度$T_4$和传送带速度$v$,制程限制中各特殊时间节点的数值也受到未知决策参量的影响,结合4.2.2.2,设各节点时间为$t_i(T_1,T_2,T_3,T_4,v)(i=1,2,3,4)$.因此可得炉温曲线优化模型的约束条件为:
+\begin{equation}
+\left\{
+\begin{array}{cc}
+
+\left|\frac{d U_2}{d t}\right|\leq3\\
+60\leq t_2(T_1,T_2,T_3,T_4,v)-t_1(T_1,T_2,T_3,T_4,v)\leq120\\
+40\leq t_4(T_1,T_2,T_3,T_4,v)-t_3(T_1,T_2,T_3,T_4,v)\leq90\\
+513\leq U_{2max}(\frac{l}{2},t)\leq523
+\end{array}\right. \\
+\end{equation}
+\paragraph{4.3.2.2$\ $目标函数的确定}$\ $
+
+由问题一问题二模型可得,炉温曲线函数为$U_2(T_1,T_2,T_3,T_4,v,t)$,设到达温度峰值时的时间为$t_5(T_1,T_2,T_3,T_4,v)$,则问题三所求炉温曲线超过490K(217ºC)到峰值温度所覆盖的面积$Area$计算公式为:
+\begin{equation}
+    Area=\int_{t_3}^{t_5}(U_2-490)dt
+\end{equation}
+要求$Area$尽可能的小,则该模型的目标函数为:
+\begin{equation}
+   \min\  Area=\int_{t_3}^{t_5}(U_2-490)dt
+\end{equation}
+
+\paragraph{4.3.2.3$\ $模型综合}$\ $
+
+综上,该炉温曲线优化模型为:
+\begin{equation}
+   \min\  Area=\int_{t_3}^{t_5}(U_2-490)dt
+\end{equation}
+\begin{equation}
+\left\{
+\begin{array}{cc}
+
+\left|\frac{d U_2}{d t}\right|\leq3\\
+60\leq t_2(T_1,T_2,T_3,T_4,v)-t_1(T_1,T_2,T_3,T_4,v)\leq120\\
+40\leq t_4(T_1,T_2,T_3,T_4,v)-t_3(T_1,T_2,T_3,T_4,v)\leq90\\
+513\leq U_{2max}(\frac{l}{2},t)\leq523
+\end{array}\right. \\
+\end{equation}
+\subsubsection{炉温曲线优化模型的求解及分析}
+\paragraph{4.3.3.1$\ $ $Area$的计算}$\ $
+
+已知炉温曲线函数为$U_2(\frac{l}{2},t)$,$Area$计算公式为:$ Area=\int_{t_3}^{t_5}(U_2-490)dt$.为了简化计算,节约求解时间,我们采取梯形分割求和法代替求积分的步骤.将时间$t$维度上的$(t_3,t_5)$区间分割为$n$个宽度$\Delta t=0.02s$的小区域,每个小区域为一个直角梯形,根据梯形面积计算公式,$Area$计算公式为:
+\begin{equation}
+  \begin{split}
+Area&=\sum\limits_{i=0}^{n-1}\frac{1}{2} [U_2(\frac{l}{2},t_3+i\Delta t)+U_2(\frac{l}{2},t_3+(i+1)\Delta t)-2\times490]\Delta t\\
+&=\frac{1}{2}[U_2(\frac{l}{2},t_3)+2\sum\limits_{i=0}^{n-1}U_2(\frac{l}{2},t_3+i\Delta t)+U_2(\frac{l}{2},t_5)-2n\times490]\Delta t
+\end{split}
+\end{equation}
+
+\begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=12cm]{国赛/梯形.png}
+    \caption{梯形分割求和法示意图}
+    \label{tab:图1}
+\end{figure}
+
+\paragraph{4.3.3.2$\ $多起点算法求解优化模型}$\ $
+
+考虑到各小温区温度以及电路板的过炉速度存在明显的上下界, 因此可以采用不同的初值进行阴影部分最小面积的搜索求解,即使用MATLAB的MultiStart多起点搜索函数,随机产生多个起点,能够很好的避免陷入局部最优,并且具有较快的收敛速度,具体算法步骤如下:
+
+\texbf{ Step1:}设定初值,并随机产生多个起点$(T1,T2,T3,T4,v)$.
+
+\texbf{Step2:}再利用MultiStart函数对各个起点选择fmincon函数对问题进行并行求解.
+
+\texbf{ Step3:}对结果进行遍历,对最优结果进行保留.
+
+\texbf{ Step4:}多次求解,重复比对每次求解的最优结果,选择其中的最优结果作为最终解.
+
+
+最终求得指定面积$Area$,温区1$\sim$5温度$T_1$,温区6温度$T_2$,温区7温度$T_3$,温区8$\sim$9温度$T_4$和传送带速度$v$结果如表4.3所示.
+\begin{longtable}
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\caption{问题三所求结果数据表}
+\label{}\\
+\begin{tabular}{c|c|c|c|c|c}
+\hline
+特定面积&温区1$\sim$5温度&温区6温度&温区7温度&温区8$\sim$9温度&传送带速度\\
+\hline
+479.97$s\cdot°C$&181.59°C&193.15°C&226.68°C&264.32°C&85.99cm/min\\
+\hline
+    \end{tabular}
+    \end{longtable}\\
+    所得炉温曲线如图4.13所示.
+    \begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=16cm]{国赛/问题三曲线.png}
+    \caption{问题三炉温曲线示意图}
+    \label{tab:图1}
+\end{figure}
+
+将所得决策参量代入问题三模型中,算得峰值温度为240.12°C,且中心温度超过217°C的时间为35.16s,结果较合理,满足炉温曲线优化要求.
+\newpage
+\subsection{问题四模型的建立与求解}
+\subsubsection{问题四的分析}
+问题四要求基于问题三的优化目标和约束条件,改进炉温曲线优化模型,使得以峰值温度为中心线的两侧超过490K的炉温曲线应尽量对称.解决问题的具体思路如下:
+
+首先,考虑将炉温曲线的峰值温度右半部分曲线向左对称化,得到一条以峰值温度为中心线的对称曲线.
+
+其次,求解原炉温曲线与对称曲线峰值温度左半部分曲线的温度差平方和,将对称问题转化为求解残差平方和最小值的问题.
+
+最后,以指定覆盖面积最小,残差平方和最小为目标函数,制程界限为约束条件,建立双目标非线性规划模型.对该模型进行求解,得到最优炉温曲线,各温区设定温度和传送带过炉速度.
+\subsubsection{改进炉温曲线优化模型的建立}
+\paragraph{4.4.2.1$\ $炉温曲线的对称化}$\ $
+
+将炉温曲线的峰值温度右半部分曲线向左对称化,得到一条以峰值温度为中心线的对称曲线.并计算原炉温曲线与对称曲线峰值温度左半部分曲线的温度差平方和,无对应部分的曲线同490K求温度差平方和.对称曲线示意图如图4.14所示.
+\begin{figure}[!htp]
+\centering
+\subfigure[$t_4\geq2t_5-t_3$]{
+\includegraphics[height=4.5cm]{国赛/对称1.png}\label{2} 
+}
+\quad
+\subfigure[$t_4<2t_5-t_3$]{
+\includegraphics[height=4.5cm]{国赛/对称2.png}\label{2} 
+}
+\caption{对称曲线示意图}
+\end{figure}
+
+若$t_4\geq2t_5-t_3$,则$R^2$的计算公式为:
+\begin{equation}
+   R^2=\int_{t_3}^{2t_5-t_4}(U_2(\frac{l}{2},t)-490)^2dt+\int_{2t_5-t_4}^{t_5}(U_2(\frac{l}{2},t)-U_2(\frac{l}{2},2t_5-t))^2dt
+\end{equation}
+
+若$t_4<2t_5-t_3$,则$R^2$的计算公式为:
+\begin{equation}
+   R^2=\int_{t_3}^{t_5}(U_2(\frac{l}{2},t)-U_2(\frac{l}{2},2t_5-t))^2dt+\int_{2t_5-t_3}^{t_4}(U_2(\frac{l}{2},t)-490)^2dt
+\end{equation}
+
+\paragraph{4.4.2.2$\ $改进炉温曲线优化模型的确定}$\ $
+
+要求炉温曲线尽可能对称,故设对称化目标函数为:
+\begin{equation}
+ \footnotesize{  \min\ R^2=&\left\{
+\begin{array}{cc}
+\int_{t_3}^{2t_5-t_4}(U_2(\frac{l}{2},t)-490)^2dt+\int_{2t_5-t_4}^{t_5}(U_2(\frac{l}{2},t)-U_2(\frac{l}{2},2t_5-t))^2dt,\quad t_4\geq2t_5-t_3\\
+\int_{t_3}^{t_5}(U_2(\frac{l}{2},t)-U_2(\frac{l}{2},2t_5-t))^2dt+\int_{2t_5-t_3}^{t_4}(U_2(\frac{l}{2},t)-490)^2dt,\quad t_4<2t_5-t_3
+\end{array}\right. }
+\end{equation}
+结合4.3.2.1,4.3.2.2可得改进炉温曲线优化模型为:
+\begin{equation}
+ \begin{array}{cc}
+     \min\ R^2\\
+  \min\  Area
+\end{array} 
+ \end{equation}
+
+\begin{equation}
+\left\{
+\begin{array}{cc}
+
+\left|\frac{d U_2}{d t}\right|\leq3\\
+60\leq t_2(T_1,T_2,T_3,T_4,v)-t_1(T_1,T_2,T_3,T_4,v)\leq120\\
+40\leq t_4(T_1,T_2,T_3,T_4,v)-t_3(T_1,T_2,T_3,T_4,v)\leq90\\
+513\leq U_{2max}(\frac{l}{2},t)\leq523
+\end{array}\right. \\
+\end{equation}
+\subsubsection{改进炉温曲线优化模型的求解及分析}
+对于双目标优化问题,难以求得能够同时满足两个优化目标的最优解,因此考虑采用分步优化算法.由于炉温曲线超过217℃到峰值温度所覆盖的面积直接影响到焊接区域中心温度以及焊接的质量,因此在实际生产中该因素相对于以峰值温度为中心线的两侧超过490K(217℃)的炉温曲线的对称性更为重要.于是可以先对面积$Area$进行优化,然后将优化结果在可接受范围内进行调整,作为约束条件之一对$R^2$进行优化,具体步骤如下:
+
+\texbf{Step1:}首先,不考虑炉温曲线的对称性优化目标,沿用问题三的求解方法得到最优的阴影部分面积$Area_{min}$.
+
+\texbf{Step2:}设置面积的变化范围$\Delta Area$,经过多次试探,设定$\Delta Area=20s\cdot°C$,将面积约束在$[Area,Area+\Delta Area]$内,并使用MATLAB的fmincon函数,利用MultiStart函数进行多起点全局搜索,求解$R^2$的最优解.
+
+\texbf{Step3:}遍历每个起点的求解结果,记录最优结果.
+
+\texbf{Step4:}多次求解,比较每次得到的最优结果,将其中的最优结果作为最终解.
+
+最终求得指定面积$Area$,温区1$\sim$5温度$T_1$,温区6温度$T_2$,温区7温度$T_3$,温区8$\sim$9温度$T_4$和传送带速度$v$结果如表4.4所示.
+\begin{longtable}
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\caption{问题四所求结果数据表}
+\label{}\\
+\begin{tabular}{c|c|c|c|c|c}
+\hline
+特定面积&温区1$\sim$5温度&温区6温度&温区7温度&温区8$\sim$9温度&传送带速度\\
+\hline
+485.40$s\cdot°C$&181.70°C&196.72°C&226.69°C&263.68°C&85.84cm/min\\
+\hline
+    \end{tabular}
+    \end{longtable}\\
+   
+    所得炉温曲线如图4.15所示.
+    
+    \begin{figure}[!htp]
+    \centering
+    \setlength{\belowcaptionskip}{0pt}
+    \includegraphics[width=14cm]{国赛/问题四曲线.png}
+    \caption{问题四炉温曲线示意图}
+    \label{tab:图1}
+\end{figure}
+
+由图4.15可看出,以峰值温度为中心线的两侧超过217ºC的炉温曲线较为对称,温度差平方和为$1.668\times10^5$.改进后区域面积与问题三区域面积相差不大,说明优化效果较好,满足实际需要.
+\newpage
+\subsection{模型评价}
+\subsubsection{模型的优点}
+\begin{enumerate}
+    \item 针对空气温度模型,我们提出了不同温区之间适应性的过渡区域,更好地拟合出了附件中的温度曲线，并通过图像清晰直观的呈现出空气温度变化区域.
+    \item 针对热传导模型的求解,采用了古典显格式差分法结合有限差分法的稳定性条件,合理选择时间和空间步长,使计算结果更为准确.
+    \item 针对最大速度求解问题,采用分步遍历算法,以不同的步长先后进行粗遍历和细遍历,减少遍历时间，更快速搜索到最优解.
+    \item 针对阴影部分面积的求解,采用梯形分割求和取代积分函数,减少了算法的时间和空间复杂度,使算法运算速度大大提升.
+    \item 针对单目标优化问题求解,选择多起点搜索算法,避免结果陷入局部最优,并能够很快收敛.
+\end{enumerate}
+\subsubsection{模型缺点}
+\begin{enumerate}
+    \item 在建立温度变化模型时进行了简化,没有考虑竖直方向的温度变化.
+    \item 参数的确定存在主观性.
+    \item 电路板的物理参数由附件中数据反解,不一定具有实际的物理意义.
+\end{enumerate}
+\subsection{模型的改进}
+本文的模型中未考虑电路板加热后产生热辐射对温区内空气温度的影响.现考虑辐射传热作用,对模型进行改进.
+
+
+根据斯特藩-玻尔兹曼定律,一个物体表面单位面积在单位时间内辐射出的总功率与物体本身的热力学温度T的四次方成正比.则单位时间内物体表面所辐射出的能量$M$表达式为\cite{6}:
+\begin{equation}
+    M=\sigma T^4
+\end{equation}
+其中,$\sigma$为辐射系数,根据物体表面情况而定,对于回流焊工艺,炉中空气与电路板之间的热辐射交换,可以用下式进行计算:
+\begin{equation}
+    q_4=\sigma(U_2^4-U_1^4(vt))
+\end{equation}
+因此,参照4.1.3.2的(3)$\sim$(10)式,电路板吸收总热量为:
+\begin{equation}
+    q_3=q_1-q_2-q_4
+\end{equation}
+参照4.1.3.3的(13)$\sim$(15)式,可得关系式:
+\begin{equation}
+-k\frac{\partial U_2}{\partial x}dDdt=k_1(U_2-U_1)dDdt+\sigma(U_2^4-U_1^4(vt))dsdt
+\end{equation}
+即:
+\begin{equation}
+\frac{\partial U_2}{\partial x}+\frac{k_1}{k}U_2+\frac{\sigma}{k}U_2^4=\frac{k_1}{k}U_1+\frac{\sigma}{k}U_1^4
+\end{equation}
+
+综上,边界条件修订为:
+\begin{equation}
+\left\{
+\begin{array}{cc}
+   \left.\frac{\partial U_2}{\partial x}\right|_{x=0}+\frac{k_1}{k}U_2(0,t)+\frac{\sigma}{k}U_2^4(0,t)=\frac{k_1}{k}U_1(vt)+\frac{\sigma}{k}U_1^4(vt)\\
+  -\left.\frac{\partial U_2}{\partial x}\right|_{x=l}+\frac{k_1}{k}U_2(l,t)+\frac{\sigma}{k}U_2^4(l,t)=\frac{k_1}{k}U_1(vt)+\frac{\sigma}{k}U_1^4(vt)
+\end{array}\right.
+\end{equation}
+\begin{thebibliography}{99}
+\bibitem{1}姜启源.数学模型(第三版)[M],北京:高等教育出版社,2009.
+\bibitem{2}顾樵.数学物理方法[M],北京:科学出版社,2012.104-106.
+\bibitem{3}谷超豪,李大潜,陈恕行,郑宋穆,谭永基.数学物理方程(第三版)[M],北京:高等教育出版社,2012.47-49.
+\bibitem{4}高温作业服设计,2018年数模国赛优秀论文(A440).
+\bibitem{5}史策.热传导方程有限差分法的MATLAB实现[J].咸阳师范学院学报,2009,24(4):27-36.
+\bibitem{6}江军.回流焊炉温控制系统的设计和优化[D].威海:山东大学,2011.
+
+\end{thebibliography}
+\newpage
+\appendix
+\section{附录1:问题一求解代码}
+\subsection{参数求解}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%参数求解主函数
+
+global t %过炉时间
+global de %过渡区域1的距离
+global de1 %过渡区域2的距离
+%  d1=1;d2=1;
+
+v=7/6;%速度
+fujian=xlsread('附件.xlsx');
+plot(fujian(:,1),fujian(:,2));%绘制附件数据图形
+
+%进行灵敏性分析时取消注释
+% for de=1.5:0.1:2.5
+% for de1=60:70
+F=zeros(size(fujian,1),1);
+delta=0.5/0.02; %每隔0.5s绘制的间隔
+k1=1;k2=1;k3=1;
+
+%对a和k1/k进行大致范围的步长遍历求解
+for aaa=0.000015:0.000001:0.000025
+    for kkk=3000:100:8000
+        zzz=chuanrefangcheng(kkk,aaa);
+        t=t-t(1,1);
+        n=find(t==19);
+        %         for i=1:size(zzz,1)
+        %            if(zzz(i,16)>30+273)
+        %               n=i;
+        %                break;
+        %            end
+        %         end
+        for i=n:delta:size(zzz,1)
+            xx(k1,k2)=zzz(i,16);
+            FF(k1,k2)=(fujian(k1,2)+273-xx(k1,k2)).^2;%最小二乘
+            k1=k1+1;
+        end
+        fengzhi(k2)=max(xx(:,k2));
+        k1=1;
+        k2=k2+1;
+    end
+    FF=sum(FF);
+    xxx{k3}=xx;
+    FFF{1,k3}=FF;
+    FFF{2,k3}=fengzhi;
+    k3=k3+1;
+    k2=1;
+end
+for i=1:size(FFF,2)
+    for j=1:size(FFF{1,1},2)
+        if(abs(FFF{2,i}(j)-max(fujian(:,2)+273))>2)
+            FFF{1,i}(j)=1000000;
+        end
+    end
+end
+
+%选择最小二乘最优解
+for i=1:size(xxx,2)
+    [fm(i),ind(i)]=min(FFF{1,i});
+    [fmin,indx]=min(fm);
+end
+
+%进行灵敏性分析时取消注释
+%         error(d1,d2)=fmin;
+%         d1=d1+1;
+%     end
+%     d1=1;
+%     d2=d2+1;
+% end
+
+%绘制拟合结果
+figure;
+plot(fujian(:,1),xxx{indx}(:,ind(indx))-273,'Linewidth',1.2);
+hold on;
+plot(fujian(:,1),fujian(:,2),'Linewidth',1.2);
+grid on;
+ylabel('电子板中心区域温度/℃');
+xlabel('时间/s');
+title('炉温曲线最小二乘拟合曲线图');
+legend('拟合结果','附件数据');
+
+%输出参数拟合结果
+aaa=0.000015:0.000001:0.000025;
+kkk=3000:100:8000;
+
+disp('根据最小二乘法拟合得到的参数a为：');
+disp(aaa(indx));
+disp('根据最小二乘法拟合得到的参数k1/k为：')
+disp(kkk(ind(indx)));
+
+%灵敏性分析图形
+% mesh(de,de1,error,'Linewidth',1.2);
+% title('温度过渡区域灵敏度分析结果');
+% xlabel('冷却区之前的温度过渡区域距离/m','Rotation',0);
+% ylabel('冷却区之后的温度过渡区域距离/m');
+% zlabel('误差平方和');
+
+\end{lstlisting}
+\subsection{热传导方程函数}
+\begin{lstlisting}[language=MATLAB]
+%热传导方程函数
+function [T]=chuanrefangcheng(kk,aa)
+global t
+global de
+global de1
+de=2/100;
+de1=66/100;
+v=7/6/100;
+dt=0.02;
+
+%温度模型设定
+Tair=[];
+S_before=0.25;
+S_after=11*0.305+10*0.05+0.25;
+t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+for i=1:size(t,2)
+    if(v*t(i)<-de)
+        Tair(i)=25+273;
+    elseif(v*t(i)>=-de&&v*t(i)<=de)
+        Tair(i)=(v*t(i)+de).*(175-25)./(2.*de)+25+273;
+    elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+        Tair(i)=175+273;
+    elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+        Tair(i)=(v*t(i)+de-1.725).*(195-175)./(2.*de+0.05)+175+273;
+    elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+        Tair(i)=195+273;
+    elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+        Tair(i)=(v*t(i)+de-2.08).*(235-195)./(2.*de+0.05)+195+273;
+    elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+        Tair(i)=235+273;
+    elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+        Tair(i)=(v*t(i)+de-2.435).*(255-235)./(2.*de+0.05)+235+273;
+    elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+        Tair(i)=255+273;
+    elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+        Tair(i)=(v*t(i)+de-3.145).*(25-255)./(de+de1+0.05)+255+273;
+    else
+        Tair(i)=25+273;
+    end
+end
+Tair=Tair';
+
+%设置步长
+dx=0.005/1000;
+d=0.15/1000;
+nn=round(d/dx);
+T=zeros(size(Tair,1),round(d/dx)+1);
+T(1,:)=25+273;
+
+%有限差分法求解差分方程
+for n=1:size(Tair,1)-1
+    for i=2:nn
+        T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+    end
+    T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+    T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+end
+
+\end{lstlisting}
+
+\subsection{问题一热传导模型求解}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%问题一求解
+
+%各个参数设置
+aa=0.000016;
+kk=7000;
+de=2/100;
+de1=66/100;
+v=7.8/6/100;
+dt=0.02;
+
+%温度模型
+Tair=[];
+S_before=0.25;
+S_after=11*0.305+10*0.05+0.25;
+t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+for i=1:size(t,2)
+    if(v*t(i)<-de)
+        Tair(i)=25+273;
+    elseif(v*t(i)>=-de&&v*t(i)<=de)
+        Tair(i)=(v*t(i)+de).*(173-25)./(2.*de)+25+273;
+    elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+        Tair(i)=173+273;
+    elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+        Tair(i)=(v*t(i)+de-1.725).*(198-173)./(2.*de+0.05)+173+273;
+    elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+        Tair(i)=198+273;
+    elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+        Tair(i)=(v*t(i)+de-2.08).*(230-198)./(2.*de+0.05)+198+273;
+    elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+        Tair(i)=230+273;
+    elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+        Tair(i)=(v*t(i)+de-2.435).*(257-230)./(2.*de+0.05)+230+273;
+    elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+        Tair(i)=257+273;
+    elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+        Tair(i)=(v*t(i)+de-3.145).*(25-257)./(de+de1+0.05)+257+273;
+    else
+        Tair(i)=25+273;
+    end
+end
+Tair=Tair';
+
+%步长设置
+dx=0.005/1000;
+d=0.15/1000;
+nn=round(d/dx);
+T=zeros(size(Tair,1),round(d/dx)+1);
+T(1,:)=25+273;
+
+%有限差分法求解热传导模型
+for n=1:size(Tair,1)-1
+    for i=2:nn
+        T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+    end
+    T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+    T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+end
+
+%从升温至30℃以上的点开始绘制
+t=t-t(1,1);
+for i=1:size(T,1)
+    if(T(i,16)>30+273)
+        n=i;
+        break;
+    end
+end
+delta=0.5/0.02;
+k1=1;
+
+%每隔0.5S进行绘制
+for i=n:delta:size(T,1)
+    xx(k1,1)=T(i,16);
+    tt(k1,1)=t(i);
+    k1=k1+1;
+end
+
+%绘制结果
+plot(tt,xx-273,'-','Linewidth',1.5);
+axis([0,350,280-273,550-273]);
+grid on;
+title('炉温曲线');
+xlabel('时间/s');
+ylabel('电子板中心区域温度/℃');
+[endmax,endind]=max(xx);
+hold on;
+plot([0,tt(endind)],[endmax-273,endmax-273],'k--','Linewidth',1.2);
+for i=1:size(xx,1)
+    if(xx(i)>217+273)
+        t217=i;
+        break;
+    end
+end
+plot([0,tt(t217)],[217,217],'k--','Linewidth',1.2);
+text(3,endmax-273+8,'最高峰值','FontSize',10);
+text(3,217-8,'217℃','FontSize',10);
+xx=xx-273;
+
+
+%输出指标
+disp('小温区3中点焊接区域中心的温度：')
+disp(T(4279,16)-273);
+disp('小温区6中点焊接区域中心的温度：')
+disp(T(8375,16)-273);
+disp('小温区7中点焊接区域中心的温度：')
+disp(T(9740,16)-273);
+disp('小温区8结束处焊接区域中心的温度：')
+disp(T(11692,16)-273);
+
+\end{lstlisting}
+\section{附录2:问题二求解MATLAB代码}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%问题二求解
+
+%参数设置
+aa=0.000016;
+kk=7000;
+de=2/100;
+de1=66/100;
+
+k=1;
+%粗遍历和精遍历
+for v_=65:0.2:100  %粗遍历
+    %for v_=72.4:0.01:74.4  %精遍历
+    v=v_/6/1000;
+    dt=0.02;%时间步长
+    
+    %温度模型
+    Tair=[];
+    S_before=0.25;
+    S_after=11*0.305+10*0.05+0.25;
+    t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+    for i=1:size(t,2)
+        if(v*t(i)<-de)
+            Tair(i)=25+273;
+        elseif(v*t(i)>=-de&&v*t(i)<=de)
+            Tair(i)=(v*t(i)+de).*(182-25)./(2.*de)+25+273;
+        elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+            Tair(i)=182+273;
+        elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+            Tair(i)=(v*t(i)+de-1.725).*(203-182)./(2.*de+0.05)+182+273;
+        elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+            Tair(i)=203+273;
+        elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+            Tair(i)=(v*t(i)+de-2.08).*(237-203)./(2.*de+0.05)+203+273;
+        elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+            Tair(i)=237+273;
+        elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+            Tair(i)=(v*t(i)+de-2.435).*(254-237)./(2.*de+0.05)+237+273;
+        elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+            Tair(i)=254+273;
+        elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+            Tair(i)=(v*t(i)+de-3.145).*(25-254)./(de+de1+0.05)+254+273;
+        else
+            Tair(i)=25+273;
+        end
+    end
+    Tair=Tair';
+    
+    %空间步长
+    dx=0.005/1000;
+    d=0.15/1000;
+    nn=round(d/dx);
+    T=zeros(size(Tair,1),round(d/dx)+1);
+    T(1,:)=25+273;
+    
+    
+    %有限差分法求解差分方程
+    for n=1:size(Tair,1)-1
+        for i=2:nn
+            T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+        end
+        T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+        T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+    end
+    
+    %制程界限计算
+    t=t-t(1,1);
+    
+    %斜率 用差分代替
+    for i=1:size(T,1)-1
+        Tv(i)=(T(i+1,16)-T(i,16))/dt;
+        
+    end
+    %150℃
+    for i=1:size(T,1)
+        if T(i,16)>=150+273
+            t1=i;
+            break;
+        end
+    end
+    %190℃
+    for i=1:size(T,1)
+        if T(i,16)>=190+273
+            t2=i;
+            break;
+        end
+    end
+    deltat=(t2-t1)*dt;
+    t3=length(find(T(:,16)>217+273))*dt;
+    %峰值
+    Tmax=max(T(:,16));
+    
+    %记录满足制程界限的速度
+    if(max(abs(Tv))<=3&&deltat>=60&&deltat<=120&&t3>=40&&t3<=90&&(Tmax>=240+273)&&(Tmax<=250+273))
+        v_sel(k)=v*1000*6;
+        k=k+1;
+    end
+    
+end
+disp('本次遍历得到的最大速度为');
+disp(v_sel(length(v_sel)));
+\end{lstlisting}
+\section{附录3:问题三求解MATLAB代码}
+\subsection{问题三求解主函数}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%问题三求解 需要进行多次求解
+
+%设定初值和上下界
+x0=[180,195,225,265,85];
+lb=[165,185,225,245,65];
+ub=[185,205,245,265,100];
+
+%设置多起点求解和fmincon求解器
+ms = MultiStart('TolX',1.0e-10,'MaxTime',300) ;
+problem = createOptimProblem('fmincon', 'objective',@func_pro3,'x0',x0, 'lb',lb,'ub',ub);
+[a,fminm,flagm,outptm,manyminsm] = run(ms,problem,40);%求解
+
+%方便查看结果
+for i=1:length(manyminsm)
+    result(i,1)=manyminsm(i).Fval;
+    result(i,2)=manyminsm(i).Exitflag;
+    Tvv{i}=manyminsm(i).X;
+end
+
+\end{lstlisting}
+\subsection{问题三优化目标函数}
+\begin{lstlisting}[language=MATLAB]
+%问题三优化目标函数
+function f=func_pro3(xx)
+%f代表面积
+
+%参数设定
+T1=xx(1);
+T2=xx(2);
+T3=xx(3);
+T4=xx(4);
+v=xx(5)/60/100;
+aa=0.000016;
+kk=7000;
+de=2/100;
+de1=66/100;
+dt=0.02;
+
+%温度模型
+Tair=[];
+S_before=0.25;
+S_after=11*0.305+10*0.05+0.25;
+t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+T0=25;
+for i=1:size(t,2)
+    if(v*t(i)<-de)
+        Tair(i)=T0+273;
+    elseif(v*t(i)>=-de&&v*t(i)<=de)
+        Tair(i)=(v*t(i)+de).*(T1-T0)./(2.*de)+T0+273;
+    elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+        Tair(i)=T1+273;
+    elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+        Tair(i)=(v*t(i)+de-1.725).*(T2-T1)./(2.*de+0.05)+T1+273;
+    elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+        Tair(i)=T2+273;
+    elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+        Tair(i)=(v*t(i)+de-2.08).*(T3-T2)./(2.*de+0.05)+T2+273;
+    elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+        Tair(i)=T3+273;
+    elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+        Tair(i)=(v*t(i)+de-2.435).*(T4-T3)./(2.*de+0.05)+T3+273;
+    elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+        Tair(i)=T4+273;
+    elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+        Tair(i)=(v*t(i)+de-3.145).*(T0-T4)./(de+de1+0.05)+T4+273;
+    else
+        Tair(i)=T0+273;
+    end
+end
+Tair=Tair';
+
+%空间步长
+dx=0.005/1000;
+d=0.15/1000;
+nn=round(d/dx);
+T=zeros(size(Tair,1),round(d/dx)+1);
+T(1,:)=25+273;
+
+%有限差分法求解热传导方程
+for n=1:size(Tair,1)-1
+    for i=2:nn
+        T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+    end
+    T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+    T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+end
+
+%制程界限条件
+for i=1:size(T,1)-1
+    Tv(i)=(T(i+1,16)-T(i,16))/dt;
+end
+
+for i=1:size(T,1)
+    if T(i,16)>=150+273
+        t1=i;
+        break;
+    end
+end
+
+for i=1:size(T,1)
+    if T(i,16)>=190+273
+        t2=i;
+        break;
+    end
+end
+
+deltat=(t2-t1)*dt;
+t3=length(find(T(:,16)>217+273))*dt;
+[Tmax,index]=max(T(:,16));
+
+%求阴影区域面积 用梯形面积代替积分函数 加快求解速度
+for i=1:size(T,1)
+    if T(i,16)>=217+273
+        t4=i;
+        break;
+    end
+end
+f=T(t4:index,16)-217-273;
+f=0.01.*(2.*sum(f)-f(1)-f(length(f)));
+
+%若不能满足制程界限 就面积赋值为无穷大
+if(max(abs(Tv))>3||deltat<60||deltat>120||t3<40||t3>90||(Tmax<240+273)||(Tmax>250+273))
+    f=1000000000;
+end
+end
+
+\end{lstlisting}
+
+
+\subsection{绘制问题三结果图像}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%绘制问题三结果图像
+
+%参数设置
+aa=0.000016;
+kk=7000;
+de=2/100;
+de1=66/100;
+v=8.59/6/100;
+dt=0.02;
+
+%温度设置
+T0=25;
+T1=181.5906;
+T2=193.1463;
+T3=226.6849;
+T4=264.3210;
+
+%速度设置
+v=85.9851/60/100;
+
+%温度模型
+Tair=[];
+S_before=0.25;
+S_after=11*0.305+10*0.05+0.25;
+t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+for i=1:size(t,2)
+    if(v*t(i)<-de)
+        Tair(i)=T0+273;
+    elseif(v*t(i)>=-de&&v*t(i)<=de)
+        Tair(i)=(v*t(i)+de).*(T1-T0)./(2.*de)+T0+273;
+    elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+        Tair(i)=T1+273;
+    elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+        Tair(i)=(v*t(i)+de-1.725).*(T2-T1)./(2.*de+0.05)+T1+273;
+    elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+        Tair(i)=T2+273;
+    elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+        Tair(i)=(v*t(i)+de-2.08).*(T3-T2)./(2.*de+0.05)+T2+273;
+    elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+        Tair(i)=T3+273;
+    elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+        Tair(i)=(v*t(i)+de-2.435).*(T4-T3)./(2.*de+0.05)+T3+273;
+    elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+        Tair(i)=T4+273;
+    elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+        Tair(i)=(v*t(i)+de-3.145).*(T0-T4)./(de+de1+0.05)+T4+273;
+    else
+        Tair(i)=T0+273;
+    end
+end
+Tair=Tair';
+
+%空间步长
+dx=0.005/1000;
+d=0.15/1000;
+nn=round(d/dx);
+T=zeros(size(Tair,1),round(d/dx)+1);
+T(1,:)=25+273;
+
+%求解差分方程
+for n=1:size(Tair,1)-1
+    for i=2:nn
+        T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+    end
+    T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+    T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+end
+
+%从30℃开始绘制
+t=t-t(1,1);
+for i=1:size(T,1)
+    if(T(i,16)>30+273)
+        n=i;
+        break;
+    end
+end
+
+%每隔0.5S绘制
+delta=0.5/0.02;
+k1=1;
+for i=n:delta:size(T,1)
+    xx(k1,1)=T(i,16);
+    tt(k1,1)=t(i);
+    k1=k1+1;
+end
+plot(tt,xx-273,'-','Linewidth',1.5);
+axis([0,350,280-273,550-273]);
+grid on;
+title('炉温曲线');
+xlabel('时间/s');
+ylabel('电子板中心区域温度/℃');
+[endmax,endind]=max(xx);
+hold on;
+plot([0,tt(endind)],[endmax-273,endmax-273],'k--','Linewidth',1.2);
+for i=1:size(xx,1)
+    if(xx(i)>217+273)
+        t217=i;
+        break;
+    end
+end
+plot([0,tt(endind)],[217,217],'k--','Linewidth',1.2);
+plot([tt(endind),tt(endind)],[0,endmax-273],'k--','Linewidth',1.2);
+text(3,endmax-273+8,'最高峰值','FontSize',10);
+text(3,217-8,'217℃','FontSize',10);
+xx=xx-273;
+for i=1:size(t217:endind,2)
+    hold on;
+    plot([tt(t217+i) tt(t217+i)],[217 xx(t217+i)],'k:');
+end
+\end{lstlisting}
+
+
+\section{附录3:问题四求解MATLAB代码}
+\subsection{问题四求解主函数}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%问题四求解 需多次求解
+
+%初值和上下界 其中初值使用第三问的求解结果
+x0=[180.59,196.14,226.68,264.32,85.9];
+lb=[165,185,225,245,65];
+ub=[185,205,245,265,100];
+ms = MultiStart('TolX',1.0e-10,'MaxTime',300) ;%
+problem = createOptimProblem('fmincon', 'objective',@func_pro4,'x0',x0, 'lb',lb,'ub',ub);
+[a,fminm,flagm,outptm,manyminsm] = run(ms,problem,60);%求解
+
+%方便查看结果
+for i=1:length(manyminsm)
+    result(i,1)=manyminsm(i).Fval;
+    result(i,2)=manyminsm(i).Exitflag;
+    Tvv{i}=manyminsm(i).X;
+end
+\end{lstlisting}
+\subsection{问题四优化函数}
+\begin{lstlisting}[language=MATLAB]
+%问题四优化函数
+function R2=func_pro4(xx)
+%参数设置
+T1=xx(1);
+T2=xx(2);
+T3=xx(3);
+T4=xx(4);
+v=xx(5)/60/100;
+aa=0.000016;
+kk=7000;
+de=2/100;
+de1=66/100;
+dt=0.02;
+
+%温度模型
+Tair=[];
+S_before=0.25;
+S_after=11*0.305+10*0.05+0.25;
+t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+T0=25;
+for i=1:size(t,2)
+    if(v*t(i)<-de)
+        Tair(i)=T0+273;
+    elseif(v*t(i)>=-de&&v*t(i)<=de)
+        Tair(i)=(v*t(i)+de).*(T1-T0)./(2.*de)+T0+273;
+    elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+        Tair(i)=T1+273;
+    elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+        Tair(i)=(v*t(i)+de-1.725).*(T2-T1)./(2.*de+0.05)+T1+273;
+    elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+        Tair(i)=T2+273;
+    elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+        Tair(i)=(v*t(i)+de-2.08).*(T3-T2)./(2.*de+0.05)+T2+273;
+    elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+        Tair(i)=T3+273;
+    elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+        Tair(i)=(v*t(i)+de-2.435).*(T4-T3)./(2.*de+0.05)+T3+273;
+    elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+        Tair(i)=T4+273;
+    elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+        Tair(i)=(v*t(i)+de-3.145).*(T0-T4)./(de+de1+0.05)+T4+273;
+    else
+        Tair(i)=T0+273;
+    end
+end
+Tair=Tair';
+
+%空间步长
+dx=0.005/1000;
+d=0.15/1000;
+nn=round(d/dx);
+T=zeros(size(Tair,1),round(d/dx)+1);
+T(1,:)=25+273;
+
+%有限差分法求解热传导方程
+for n=1:size(Tair,1)-1
+    for i=2:nn
+        T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+    end
+    T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+    T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+end
+
+
+%制程界限
+for i=1:size(T,1)-1
+    Tv(i)=(T(i+1,16)-T(i,16))/dt;
+end
+
+for i=1:size(T,1)
+    if T(i,16)>=150+273
+        t1=i;
+        break;
+    end
+end
+
+for i=1:size(T,1)
+    if T(i,16)>=190+273
+        t2=i;
+        break;
+    end
+end
+
+deltat=(t2-t1)*dt;
+t3=length(find(T(:,16)>217+273))*dt;
+[Tmax,index]=max(T(:,16));
+
+
+%对称性计算
+tt=find(T(:,16)>217+273);
+tt1=tt(1);%左边217℃
+tt2=tt(length(tt));%右边217℃
+tt3=index;%峰值
+
+if((tt1+tt2)/2>=tt3)%左短右长
+    ttt1=((tt3-tt1)+tt3):tt2;%与0作差比较
+    ttt2=tt3:((tt3-tt1)+tt3);%与右侧函数曲线作差
+    R2=(T(ttt2,16)-T(tt1:tt3,16))'*(T(ttt2,16)-T(tt1:tt3,16))+(T(ttt1,16)-217-273)'*(T(ttt1,16)-217-273);
+else%左长右短
+    ttt1=tt1:tt3-(tt2-tt3);%与0作差比较
+    ttt2=tt3-(tt2-tt3):tt3;%与右侧函数曲线作差
+    R2=(T(ttt2,16)-T(tt3:tt2,16))'*(T(ttt2,16)-T(tt3:tt2,16))+(T(ttt1,16)-217-273)'*(T(ttt1,16)-217-273);
+end
+
+%求阴影部分面积
+for i=1:size(T,1)
+    if T(i,16)>=217+273
+        t4=i;
+        break;
+    end
+end
+
+f=T(t4:index,16)-217-273;
+f=0.01.*(2.*sum(f)-f(1)-f(length(f)));
+
+%判断是否满足制程界限
+if(max(abs(Tv))>3||deltat<60||deltat>120||t3<40||t3>90||(Tmax<240+273)||(Tmax>250+273))
+    f=10000000000000;
+end
+
+%判断是否满足面积约束
+if(f>500||f<480)
+    R2=1000000000;
+end
+
+end
+\end{lstlisting}
+\subsection{绘制问题四结果图像}
+\begin{lstlisting}[language=MATLAB]
+clc
+clear
+%绘制问题四结果图像
+
+%参数设置
+aa=0.000016;
+kk=7000;
+de=2/100;
+de1=66/100;
+v=8.58413/6/100;
+dt=0.02;
+
+%温度模型
+Tair=[];
+S_before=0.25;
+S_after=11*0.305+10*0.05+0.25;
+t=-ceil(S_before/v*50)/50:0.02:ceil(S_after/v*50)/50;
+
+%温度设置 问题四结果
+T0=25;T1=181.6957;T2=196.7241;T3=226.6856;T4=263.6846;
+for i=1:size(t,2)
+    if(v*t(i)<-de)
+        Tair(i)=T0+273;
+    elseif(v*t(i)>=-de&&v*t(i)<=de)
+        Tair(i)=(v*t(i)+de).*(T1-T0)./(2.*de)+T0+273;
+    elseif(v*t(i)>de&&v*t(i)<=1.725-de)
+        Tair(i)=T1+273;
+    elseif(v*t(i)>1.725-de&&v*t(i)<=1.775+de)
+        Tair(i)=(v*t(i)+de-1.725).*(T2-T1)./(2.*de+0.05)+T1+273;
+    elseif(v*t(i)>1.775+de&&v*t(i)<=2.08-de)
+        Tair(i)=T2+273;
+    elseif(v*t(i)>2.08-de&&v*t(i)<=2.13+de)
+        Tair(i)=(v*t(i)+de-2.08).*(T3-T2)./(2.*de+0.05)+T2+273;
+    elseif(v*t(i)>2.13+de&&v*t(i)<=2.435-de)
+        Tair(i)=T3+273;
+    elseif(v*t(i)>2.435-de&&v*t(i)<=2.485+de)
+        Tair(i)=(v*t(i)+de-2.435).*(T4-T3)./(2.*de+0.05)+T3+273;
+    elseif(v*t(i)>2.485+de&&v*t(i)<=3.145-de)
+        Tair(i)=T4+273;
+    elseif(v*t(i)>3.145-de&&v*t(i)<=3.195+de1)
+        Tair(i)=(v*t(i)+de-3.145).*(T0-T4)./(de+de1+0.05)+T4+273;
+    else
+        Tair(i)=T0+273;
+    end
+end
+Tair=Tair';
+
+%空间步长
+dx=0.005/1000;
+d=0.15/1000;
+nn=round(d/dx);
+T=zeros(size(Tair,1),round(d/dx)+1);
+T(1,:)=25+273;
+
+%有限差分法求解差分方程
+for n=1:size(Tair,1)-1
+    for i=2:nn
+        T(n+1,i)=(T(n,i+1)-2.*T(n,i)+T(n,i-1)).*dt.*(aa.^2)./(dx.^2)+T(n,i);
+    end
+    T(n+1,1)=(dx.*kk.*Tair(n+1,1)+T(n+1,2))./(kk.*dx+1);
+    T(n+1,nn+1)=(dx.*kk.*Tair(n+1,1)+T(n+1,nn))./(kk.*dx+1);
+end
+
+%大于30℃时开始绘制
+t=t-t(1,1);
+for i=1:size(T,1)
+    if(T(i,16)>30+273)
+        n=i;
+        break;
+    end
+end
+
+%每个0.5S绘制
+delta=0.5/0.02;
+k1=1;
+for i=n:delta:size(T,1)
+    xx(k1,1)=T(i,16);
+    tt(k1,1)=t(i);
+    k1=k1+1;
+end
+plot(tt,xx-273,'-','Linewidth',1.5);
+axis([0,350,280-273,550-273]);
+grid on;
+title('炉温曲线');
+xlabel('时间/s');
+ylabel('电子板中心区域温度/℃');
+[endmax,endind]=max(xx);
+hold on;
+plot([0,tt(endind)],[endmax-273,endmax-273],'k--','Linewidth',1.2);
+ttt=find(xx>217+273);
+t217=ttt(1);
+tt217=ttt(length(ttt));
+plot([0,tt(tt217)],[217,217],'k--','Linewidth',1.2);
+plot([tt(endind),tt(endind)],[0,endmax-273],'k--','Linewidth',1.2);
+text(3,endmax-273+8,'最高峰值','FontSize',10);
+text(3,217-8,'217℃','FontSize',10);
+xx=xx-273;
+for i=1:size(t217:endind,2)
+    hold on;
+    plot([tt(t217+i) tt(t217+i)],[217 xx(t217+i)],'k:');
+end
+\end{lstlisting}
+\end{document}
